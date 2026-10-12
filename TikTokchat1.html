@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chizu wa Chizu TikTok Live Overlay</title>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: transparent;
+            font-family: 'Caveat', cursive;
+            margin: 0;
+            padding: 20px;
+            overflow: hidden;
+        }
+        #chat-container {
+            width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+        }
+        .chat-bubble {
+            background: rgba(0, 0, 0, 0.85);
+            color: #ffffff;
+            padding: 12px 16px;
+            border-radius: 16px;
+            border-left: 5px solid #fe2c55;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            display: flex;
+            gap: 12px;
+            animation: slideIn 0.4s ease-out;
+            position: relative;
+        }
+        
+        /* Eneo la Picha na Penseli Inayochora */
+        .avatar-container {
+            position: relative;
+            width: 55px;
+            height: 55px;
+        }
+        .avatar {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            border: 2px solid #fe2c55;
+            object-fit: cover;
+            /* Mwanzo picha inaanza ikiwa nyeusi na nyeupe kama sketch */
+            filter: grayscale(100%) contrast(200%);
+            animation: revealColor 1.5s forwards ease-in-out;
+        }
+        
+        /* Picha ya Penseli inayotembea kuchora */
+        .drawing-pencil {
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            width: 30px;
+            height: 30px;
+            background: url('https://cdn-icons-png.flaticon.com/512/588/588371.png') no-repeat center center;
+            background-size: contain;
+            animation: drawMotion 1.5s forwards ease-in-out;
+            z-index: 10;
+        }
+
+        .content-box {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        .user-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .username {
+            font-size: 20px;
+            color: #ff3b5c;
+            font-weight: bold;
+        }
+        .stats {
+            font-size: 14px;
+            color: #aaaaaa;
+            font-family: sans-serif;
+        }
+        .welcome-msg {
+            color: #25f4ee;
+            font-size: 18px;
+            margin: 2px 0;
+        }
+        .message {
+            font-size: 22px;
+            word-break: break-word;
+        }
+        .typing::after {
+            content: '|';
+            animation: blink 0.7s infinite;
+        }
+
+        /* Animation ya Penseli kuzunguka na kuchora */
+        @keyframes drawMotion {
+            0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+            30% { transform: translate(35px, 10px) rotate(20deg); }
+            70% { transform: translate(10px, 35px) rotate(-15deg); }
+            100% { transform: translate(20px, 20px) rotate(0deg); opacity: 0; } /* Penseli inapotea kazi ikiisha */
+        }
+
+        /* Animation ya picha kubadilika kutoka sketch kwenda rangi halisi */
+        @keyframes revealColor {
+            0% { filter: grayscale(100%) contrast(300%) brightness(150%); transform: scale(0.7); opacity: 0.3; }
+            50% { filter: grayscale(50%) contrast(150%); transform: scale(1.05); opacity: 0.8; }
+            100% { filter: grayscale(0%) contrast(100%); transform: scale(1); opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="chat-container"></div>
+
+    <script>
+        const chatContainer = document.getElementById('chat-container');
+
+        function addLiveViewer(username, text, avatarUrl, followers, likes) {
+            const now = new Date();
+            const timeJoined = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const bubble = document.createElement('div');
+            bubble.className = 'chat-bubble';
+
+            // Box ya picha na penseli inayochora
+            const avatarContainer = document.createElement('div');
+            avatarContainer.className = 'avatar-container';
+
+            const img = document.createElement('img');
+            img.className = 'avatar';
+            img.src = avatarUrl || 'https://i.pravatar.cc/100?img=1';
+
+            const pencil = document.createElement('div');
+            pencil.className = 'drawing-pencil';
+
+            avatarContainer.appendChild(img);
+            avatarContainer.appendChild(pencil);
+
+            const contentBox = document.createElement('div');
+            contentBox.className = 'content-box';
+
+            contentBox.innerHTML = `
+                <div class="user-info">
+                    <span class="username">${username}</span>
+                    <span class="stats">⏱️ ${timeJoined} | 👥 ${followers} | ❤️ ${likes}</span>
+                </div>
+                <div class="welcome-msg">Welcome to Chizu wa Chizu!</div>
+                <div class="message typing" id="msg-text"></div>
+            `;
+
+            bubble.appendChild(avatarContainer);
+            bubble.appendChild(contentBox);
+            chatContainer.appendChild(bubble);
+
+            const msgDiv = bubble.querySelector('#msg-text');
+            let i = 0;
+            function typeWriter() {
+                if (i < text.length) {
+                    msgDiv.textContent += text.charAt(i);
+                    i++;
+                    setTimeout(typeWriter, 40);
+                } else {
+                    msgDiv.classList.remove('typing');
+                }
+            }
+            typeWriter();
+
+            if (chatContainer.children.length > 4) {
+                chatContainer.removeChild(chatContainer.children[0]);
+            }
+        }
+
+        // Mfano wa Viewer anayeingia kwenye Live:
+        setTimeout(() => {
+            addLiveViewer("Juma_Mkali", "Mambo vipi Chizu, nimeingia kwenye live!", "https://i.pravatar.cc/100?img=12", "1.2K", "5.4K");
+        }, 1000);
+    </script>
+
+</body>
+</html>
